@@ -1,7 +1,7 @@
+
 import streamlit as st
-from google import genai  
-from google.genai import types # Para configuraciones avanzadas
-from PIL import Image
+from google import genai  # Asegúrate de que el import sea este
+from google.genai import types
 
 # 1) Pedir la clave al usuario (sidebar)
 st.sidebar.header("Configuración")
@@ -16,12 +16,24 @@ if not api_key:
     st.info("Introduce tu API key en la barra lateral para empezar.")
     st.stop()
 
-# 3) Configurar Gemini solo cuando hay clave
+# 3) Crear el cliente de Gemini (Sustituye a genai.configure)
 try:
-    genai.configure(api_key=api_key)
+    # En el nuevo SDK, creamos un objeto 'client' usando la api_key
+    client = genai.Client(api_key=api_key)
+    
+    # Prueba rápida para verificar que la clave es válida
+    # (Opcional: puedes intentar una llamada pequeña aquí)
 except Exception as e:
-    st.error(f"No se pudo configurar la API key: {e}")
+    st.error(f"Error al conectar con Gemini: {e}")
     st.stop()
+
+# 4) Ejemplo de cómo llamar al modelo ahora:
+if st.button("Probar conexión"):
+    response = client.models.generate_content(
+        model="gemini-2.0-flash", 
+        contents="¡Conexión exitosa!"
+    )
+    st.success(response.text)
 
 # Configuración del modelo (usamos Flash por ser rápido y eficiente)
 model = genai.GenerativeModel( "models/gemini-2.0-flash")
@@ -92,3 +104,4 @@ if st.button("🔍 ESCANEAR VIBRAS"):
 st.markdown("---")
 
 st.caption("Usa esta app bajo tu propio riesgo. La IA no se hace responsable de bloqueos en WhatsApp.")
+
