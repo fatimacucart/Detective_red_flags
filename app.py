@@ -1,9 +1,12 @@
-
 import streamlit as st
-from google import genai  # Asegúrate de que el import sea este
+from google import genai
 from google.genai import types
+from PIL import Image
 
-# 1) Pedir la clave al usuario (sidebar)
+# 1. Configuración de la Interfaz (Streamlit) - DEBE IR AL PRINCIPIO
+st.set_page_config(page_title="Red Flag Scanner", page_icon="🚩")
+
+# 2. Pedir la clave al usuario (sidebar)
 st.sidebar.header("Configuración")
 api_key = st.sidebar.text_input(
     "API key de Gemini",
@@ -11,35 +14,19 @@ api_key = st.sidebar.text_input(
     placeholder="Pega aquí tu API key…",
 )
 
-# 2) Bloquear la app hasta que haya clave
+# 3. Bloquear la app hasta que haya clave
 if not api_key:
     st.info("Introduce tu API key en la barra lateral para empezar.")
     st.stop()
 
-# 3) Crear el cliente de Gemini (Sustituye a genai.configure)
+# 4. Crear el cliente de Gemini (Nuevo SDK)
 try:
-    # En el nuevo SDK, creamos un objeto 'client' usando la api_key
     client = genai.Client(api_key=api_key)
-    
-    # Prueba rápida para verificar que la clave es válida
-    # (Opcional: puedes intentar una llamada pequeña aquí)
 except Exception as e:
     st.error(f"Error al conectar con Gemini: {e}")
     st.stop()
 
-# 4) Ejemplo de cómo llamar al modelo ahora:
-if st.button("Probar conexión"):
-    response = client.models.generate_content(
-        model="gemini-2.0-flash", 
-        contents="¡Conexión exitosa!"
-    )
-    st.success(response.text)
-
-# Configuración del modelo (usamos Flash por ser rápido y eficiente)
-model = genai.GenerativeModel( "models/gemini-2.0-flash")
-
-# 2. Configuración de la Interfaz (Streamlit)
-st.set_page_config(page_title="Red Flag Scanner", page_icon="🚩")
+# --- DISEÑO DE LA APP ---
 
 st.title("🚩 Detective de Red Flags 2.0")
 st.markdown("¿Te están haciendo *ghosting* o solo es *delulu*? Vamos a descubrirlo.")
@@ -53,7 +40,7 @@ with st.sidebar:
     )
     st.info("Sugerencia: Sube una captura de pantalla de WhatsApp para un análisis más real.")
 
-# 3. Entrada de datos (Texto o Imagen)
+# Entrada de datos (Texto o Imagen)
 tab1, tab2 = st.tabs(["Escribir Mensaje", "Subir Captura"])
 
 with tab1:
@@ -64,10 +51,9 @@ with tab2:
     if imagen_input:
         st.image(imagen_input, caption="Evidencia cargada", width=300)
 
-# 4. Lógica de Análisis
+# 5. Lógica de Análisis (Corregida para el nuevo SDK)
 if st.button("🔍 ESCANEAR VIBRAS"):
     
-    # Construcción del Prompt Maestro
     prompt_base = f"""
     Actúa como un experto en relaciones modernas y lenguaje digital con un tono {personalidad}.
     Analiza la comunicación proporcionada (texto o imagen).
@@ -82,12 +68,18 @@ if st.button("🔍 ESCANEAR VIBRAS"):
     try:
         with st.spinner('Analizando el subtexto...'):
             if imagen_input:
-                # Si hay imagen, Gemini la analiza
+                # El nuevo SDK acepta la imagen de PIL directamente en una lista
                 img = Image.open(imagen_input)
-                response = model.generate_content([prompt_base, img])
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=[prompt_base, img]
+                )
             elif texto_input:
-                # Si es solo texto
-                response = model.generate_content(f"{prompt_base}\n\nMensaje a analizar: {texto_input}")
+                # Caso solo texto
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=f"{prompt_base}\n\nMensaje a analizar: {texto_input}"
+                )
             else:
                 st.warning("Necesito un mensaje o una imagen para trabajar, no soy adivino (todavía).")
                 st.stop()
@@ -98,10 +90,10 @@ if st.button("🔍 ESCANEAR VIBRAS"):
             st.markdown(response.text)
             
     except Exception as e:
-        st.error(f"Hubo un error: {e}")
+        st.error(f"Hubo un error en el análisis: {e}")
 
-# 5. Pie de página
+# Pie de página
 st.markdown("---")
-
 st.caption("Usa esta app bajo tu propio riesgo. La IA no se hace responsable de bloqueos en WhatsApp.")
+
 
