@@ -1,5 +1,6 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai  
+from google.genai import types # Para configuraciones avanzadas
 from PIL import Image
 
 # 1) Pedir la clave al usuario (sidebar)
@@ -89,4 +90,5 @@ if st.button("🔍 ESCANEAR VIBRAS"):
 
 # 5. Pie de página
 st.markdown("---")
+
 st.caption("Usa esta app bajo tu propio riesgo. La IA no se hace responsable de bloqueos en WhatsApp.")
